@@ -20,3 +20,11 @@ Install the required Python packages using:
 
 ```bash
 pip install flask scapy scikit-learn chart.js
+We welcome contributions! If you'd like to contribute to Senspy, please follow these steps:
+
+Fork the repository.
+Create a new branch: git checkout -b feature/your-feature-name.
+Commit your changes: git commit -m 'Add some feature'.
+Push to the branch: git push origin feature/your-feature-name.
+Submit a pull request.
+The Senspy team acknowledges the contributions of the open-source community and the creators of Flask, Scapy, and Chart.js.
