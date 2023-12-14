@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPU Usage Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        .chart-container {
+            background-color: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        canvas {
+            height: 300px;
+            max-height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h1>CPU Usage Chart</h1>
+
+    <div class="chart-container cpu">
+        <div class="label">CPU Usage</div>
+        <canvas id="cpuChart" height="300"></canvas>
+    </div>
+
+    <script>
+        function getCurrentTimestamp() {
+            return Math.floor(Date.now() / 1000); // Convert milliseconds to seconds
+        }
+
+        // Simulated data (replace this with your actual data)
+        const data = {
+            cpu: [
+                { timestamp: getCurrentTimestamp(), usage: 30 },
+                { timestamp: getCurrentTimestamp() + 300, usage: 40 },
+                { timestamp: getCurrentTimestamp() + 600, usage: 25 },
+                // Add more data points as needed
+            ],
+        };
+
+        function updateCpuChart(data) {
+            clearChart('cpuChart');
+
+            const cpuChartCanvas = document.getElementById('cpuChart');
+            const cpuChartCtx = cpuChartCanvas.getContext('2d');
+
+            const cpuLabels = data.cpu.map(cpuData => new Date(cpuData.timestamp * 1000).toLocaleTimeString());
+
+            const cpuChart = new Chart(cpuChartCtx, {
+                type: 'line',
+                data: {
+                    labels: cpuLabels,
+                    datasets: [
+                        {
+                            label: 'CPU Usage',
+                            borderColor: 'yellow',
+                            data: data.cpu.map(cpuData => cpuData.usage),
+                        },
+                    ],
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                        },
+                    },
+                },
+            });
+        }
+
+        function clearChart(chartId) {
+            const chartCanvas = document.getElementById(chartId);
+            const chartCtx = chartCanvas.getContext('2d');
+            chartCtx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
+        }
+
+        // Initial update with simulated data
+        updateCpuChart(data);
+    </script>
+</body>
+</html>
