@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Senspy-Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: rgb(62, 41, 255);
+            margin: 20px;
+        }
+
+        h1 {
+            color: rgb(0, 0, 0);
+            text-align: center;
+            text-shadow: 0cqb;
+            font-weight: bolder;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            justify-content: space-around;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .chart-container {
+            background-color: black;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            transition: background-color 0.3s;
+            height: 250px;
+        }
+
+        .chart-container:hover {
+            background-color: rgb(227, 237, 234);
+            cursor: pointer;
+        }
+
+        canvas {
+            height: 100%;
+            max-height: 100%;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            float: right;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 8px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background-color: white;
+        }
+
+        @media only screen and (max-width: 600px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-container {
+                width: 100%;
+            }
+        }
+        #dashboard-logo {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            max-width: 100px;
+        }
+
+        /* Custom Colors */
+        .network-traffic {
+            background-color: white; 
+            border-color: #2980b9;
+            color: rgb(0, 0, 0);
+            font-weight: bolder;
+        }
+
+        .anomaly-analysis {
+            background-color: #fff;
+            border-color: #a93226;
+            color: rgb(0, 0, 0);
+            font-weight: bolder;
+        }
+
+        .cpu{
+            background-color: white; 
+            border-color: #7d3c98;
+            color: rgb(0, 0, 0);
+            font-weight: bolder;
+        }
+
+        .latency {
+            background-color: white; 
+            border-color: #138d75;
+            color: rgb(0, 0, 0);
+            font-weight: bolder;
+        }
+
+        /* Labels */
+        .label {
+            text-align: center;
+            margin-top: 5px;
+        }
+        a {
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Unleash the Power of Insight, Shielding Your Digital Realm Through the Art of Behavioral Vigilance</h1>
+
+    <div class="dashboard">
+        <a href="#" class="chart-container network-traffic">
+            <div class="label"><span style="color: black;">Network Traffic</span></div>
+            <canvas id="networkTrafficChart" height="300"></canvas>
+        </a>
+
+        <a href="#" class="chart-container anomaly-analysis">
+            <div class="label">Anomaly Analysis</div>
+            <img src="https://media.geeksforgeeks.org/wp-content/uploads/20230506140813/anamoly-detection-using-line-plot.png" alt="Anomaly Analysis Image" style="max-width: 100%; max-height: 100%;">
+            <canvas id="anomalyChart" height="300"></canvas>
+        </a>
+
+        <a href="cpu.html" class="chart-container cpu">
+            <div class="label">cpu-graph</div>
+            <img src="https://support.smartbear.com/loadcomplete/docs/_images/testing-with/results/graphs/cpu-graph.gif" alt="Anomaly Analysis Image" style="max-width: 100%; max-height: 100%;">
+            <canvas id="systemLogsChart" height="300"></canvas>
+        </a>
+
+        <a href="#" class="chart-container latency">
+            <div class="label">Latency</div>
+            <img src="https://www.researchgate.net/publication/330852762/figure/fig4/AS:734448530227201@1552117583223/Network-latency-growth-rate-comparison-for-no-latency-Ethernet-and-adhoc-WiFi.png" alt="Anomaly Analysis Image" style="max-width: 100%; max-height: 100%;">
+            
+            <canvas id="latencyChart" height="300"></canvas>
+        </a>
+    </div>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Source IP</th>
+                <th>Destination IP</th>
+                <th>Threat Detected</th>
+            </tr>
+        </thead>
+        <tbody id="packetTableBody"></tbody>
+    </table>
+
+    <script>
+        function fetchData() {
+            fetch('/data')  
+                .then(response => response.json())
+                .then(data => {
+                    updateNetworkTrafficChart(data);
+                    updateAnomalyChart(data);
+                    updateSystemLogsChart(data);
+                    updateLatencyChart(data);
+                    updateTable(data);
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        }
+
+        function updateNetworkTrafficChart(data) {
+            clearChart('networkTrafficChart');
+
+            const chartCtx = document.getElementById('networkTrafficChart').getContext('2d');
+            const systemTimeLabels = data.time_points.map(timestamp => new Date(timestamp * 1000).toLocaleTimeString());
+
+            const networkTrafficChart = new Chart(chartCtx, {
+                type: 'line',
+                data: {
+                    labels: systemTimeLabels,
+                    datasets: [
+                        {
+                            label: 'Incoming Traffic',
+                            borderColor: 'blue',
+                            data: data.incoming_traffic,
+                        },
+                        {
+                            label: 'Outgoing Traffic',
+                            borderColor: 'green',
+                            data: data.outgoing_traffic,
+                        },
+                    ],
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                        },
+                    },
+                },
+            });
+        }
+
+        function updateAnomalyChart(data) {
+    const anomalyChartCanvas = document.getElementById('anomalyChart');
+    const anomalyChartCtx = anomalyChartCanvas.getContext('2d');
+
+    console.log('Updating anomaly chart with data:', data);
+
+    if (data.anomalies && data.anomalies.length > 0) {
+        console.log('Anomalies found. Data:', data.anomalies);
+
+        const anomalyLabels = data.anomalies.map(anomaly => new Date(anomaly.timestamp * 1000).toLocaleTimeString());
+
+        const anomalyChart = new Chart(anomalyChartCtx, {
+            type: 'line',
+            data: {
+                labels: anomalyLabels,
+                datasets: [
+                    {
+                        label: 'Anomaly Score',
+                        borderColor: 'red',
+                        data: data.anomalies.map(anomaly => anomaly.score),
+                    },
+                ],
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                    },
+                },
+            },
+        });
+    } else {
+        console.log('No anomalies found. Clearing the chart.');
+        anomalyChartCtx.clearRect(0, 0, anomalyChartCanvas.width, anomalyChartCanvas.height);
+    }
+}
+
+
+        function updateSystemLogsChart(data) {
+            clearChart('systemLogsChart');
+            console.log('Updating system logs chart with data:', data);
+
+const systemLogsChartCanvas = document.getElementById('systemLogsChart');
+const systemLogsChartCtx = systemLogsChartCanvas.getContext('2d');
+
+if (systemLogsChartCanvas.clientHeight === 0 || systemLogsChartCanvas.clientWidth === 0) {
+    console.log('System logs chart canvas is not visible. Check container size and visibility.');
+    return;
+}
+           
+            if (data.system_logs && data.system_logs.length > 0) {
+                const systemLogsLabels = data.system_logs.map(log => new Date(log.timestamp * 1000).toLocaleTimeString());
+
+                const systemLogsChart = new Chart(systemLogsChartCtx, {
+                    type: 'line',
+                    data: {
+                        labels: systemLogsLabels,
+                        datasets: [
+                            {
+                                label: 'Log Count',
+                                borderColor: 'purple',
+                                data: data.system_logs.map(log => log.log_count),
+                            },
+                        ],
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                            },
+                        },
+                    },
+                });
+            }
+        }
+
+        function updateLatencyChart(data) {
+            clearChart('latencyChart');
+            console.log('Updating latency chart with data:', data);
+
+    const latencyChartCanvas = document.getElementById('latencyChart');
+    const latencyChartCtx = latencyChartCanvas.getContext('2d');
+
+    if (latencyChartCanvas.clientHeight === 0 || latencyChartCanvas.clientWidth === 0) {
+        console.log('Latency chart canvas is not visible. Check container size and visibility.');
+        return;
+    }
+
+            
+
+            if (data.latency && data.latency.length > 0) {
+                const latencyLabels = data.latency.map(latency => new Date(latency.timestamp * 1000).toLocaleTimeString());
+
+                const latencyChart = new Chart(latencyChartCtx, {
+                    type: 'line',
+                    data: {
+                        labels: latencyLabels,
+                        datasets: [
+                            {
+                                label: 'Latency Value',
+                                borderColor: 'orange',
+                                data: data.latency.map(latency => latency.latency_value),
+                            },
+                        ],
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                            },
+                        },
+                    },
+                });
+            }
+        }
+        function updateTable(data) {
+    const packetTableBody = document.getElementById('packetTableBody');
+    packetTableBody.innerHTML = '';
+
+    if (data.packet_info && data.packet_info.length > 0) {
+        data.packet_info.forEach(packet => {
+            const row = document.createElement('tr');
+
+            // Convert timestamp to a human-readable format
+            const timestamp = packet['Time'] ? new Date(packet['Time'] * 1000).toLocaleTimeString() : 'N/A';
+
+            const timeCell = document.createElement('td');
+            timeCell.textContent = timestamp;
+            row.appendChild(timeCell);
+
+            const sourceIpCell = document.createElement('td');
+            sourceIpCell.textContent = packet['Source IP'] || 'N/A';
+            row.appendChild(sourceIpCell);
+
+            const destIpCell = document.createElement('td');
+            destIpCell.textContent = packet['Destination IP'] || 'N/A';
+            row.appendChild(destIpCell);
+
+            const threatCell = document.createElement('td');
+            threatCell.textContent = packet['Threat Detected'] || 'N/A';
+            row.appendChild(threatCell);
+
+            packetTableBody.appendChild(row);
+        });
+    } else {
+        // Log a message or handle the case where packet_info is not as expected
+        console.error('Packet info not available or in unexpected format:', data.packet_info);
+    }
+}
+
+
+        function clearChart(chartId) {
+            const chartCanvas = document.getElementById(chartId);
+            const chartCtx = chartCanvas.getContext('2d');
+            chartCtx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
+        }
+
+        fetchData();
+        setInterval(fetchData, 60000); 
+    </script>
+</body>
+</html>
