@@ -1,11 +1,12 @@
 from flask import Flask, render_template, jsonify
 import threading
 import time
+import socket
 from scapy.all import *
 from sklearn.ensemble import IsolationForest
 import numpy as np
 
-app = Flask(_name_)
+app = Flask(__name__)
 
 # Get the system's IP address
 host_name = socket.gethostname()
@@ -17,9 +18,12 @@ incoming_traffic = []
 outgoing_traffic = []
 packet_info = []
 
-# Dummy function for anomaly detection using Isolation Forest
+# Initialize the Isolation Forest model
+model = IsolationForest(contamination=0.1)
+
 def detect_anomaly(data):
-    model = IsolationForest(contamination=0.1)
+    if len(data) < 2:
+        return np.ones(len(data))  # No anomalies detected if data is insufficient
     predictions = model.fit_predict(data)
     return predictions
 
@@ -39,7 +43,10 @@ def analyze_packet(packet):
 
     # Use the last N values for anomaly detection
     window_size = 10
-    data_window = np.array(incoming_traffic[-window_size:] + outgoing_traffic[-window_size:]).reshape(-1, 1)
+    if len(incoming_traffic) < window_size:
+        data_window = np.array(list(zip(incoming_traffic, outgoing_traffic)))
+    else:
+        data_window = np.array(list(zip(incoming_traffic[-window_size:], outgoing_traffic[-window_size:])))
 
     # Update packet information list
     threat_detected = detect_anomaly(data_window)[-1] == -1
@@ -54,7 +61,6 @@ def analyze_packet(packet):
     })
 
 def sniff_packets():
-    # Sniff packets and update packet information
     sniff(prn=lambda pkt: analyze_packet(pkt), store=False)
 
 @app.route('/')
@@ -71,10 +77,10 @@ def get_data():
         'packet_info': packet_info,
     })
 
-if _name_ == '_main_':
+if __name__ == '__main__':
     # Start packet sniffing in a separate thread
-    sniff_thread = threading.Thread(target=sniff_packets)
+    sniff_thread = threading.Thread(target=sniff_packets, daemon=True)
     sniff_thread.start()
 
-    # Run the Flask app on port 80 for XAMPP
-    app.run(debug=True, port=80, host='0.0.0.0')
+    # Run the Flask app on localhost:5000
+    app.run(debug=True, port=5000, host='127.0.0.1')
